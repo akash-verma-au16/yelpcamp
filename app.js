@@ -1,36 +1,77 @@
+require('dotenv').config()
 const express = require('express')
 const mongoose = require('mongoose')
-const User = require('./models/User')
+const expHbs = require('express-handlebars')
+const bcrypt = require('bcrypt')
 
 const app = express()
 
+//Routers
+const userRouter = require('./routes/user')
+const { seedDB } = require('./seed')
 
-const DB_URL = "mongodb+srv://express-attainu:qAmxNDPVztn2rSUG@cluster0.bg4zd.mongodb.net/yelpcamp-attainu?retryWrites=true&w=majority"
 
-mongoose.connect(DB_URL, {
+const {DATABASE_URL} = process.env
+
+mongoose.connect(DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useFindAndModify: false,
     useCreateIndex: true
-}, async (err) => {
+}, (err) => {
     if (err) throw err
 
+    // seedDB()
+
     console.log('Connected')
+})
 
-    // const instance = new User()
+//Handle Bars Middleware
+app.engine('hbs', expHbs({ extname: 'hbs'  }))
+app.set('view engine', 'hbs')
 
-    const newUser = {
-        email: "ASDASD",
-        password: "asdasdasd"
+app.use(express.urlencoded({extended: false}))
+
+
+app.use('/user', userRouter)
+
+
+app.get('/', async (req, res) => {
+
+    const email = "abc@123.com"
+    const password = "123"
+
+    const pass2 = "123"
+
+    const salt = await bcrypt.genSalt()
+    const hashedPassword = await bcrypt.hash(password, salt)
+    console.log(salt)
+    console.log(hashedPassword)
+
+
+    // const salt2 = await bcrypt.genSalt(10)
+    // const hashedPassword2 = await bcrypt.hash(pass2, salt2)
+
+    // console.log(salt2)
+    // console.log(hashedPassword2)
+
+
+    //login
+    //get the user from database
+    const user = {
+        email: "abc@123.com",
+        password: hashedPassword //coming from db
     }
 
-    const user = new User(newUser)
 
-    const result = await user.save()
+    const isMatching = await bcrypt.compare(password, user.password)
 
-    console.log(result)
-
+    console.log(isMatching)
+    res.send("Welcome To YelpCamp")
 })
+
+
+
 
 
 
